@@ -1,0 +1,14 @@
+.counter-section {
+  background: #fff;
+  border-radius: 8px;
+  padding: 24px;
+  box-shadow: 0 1px 3px #0000001a;
+}
+[data-theme="dark"] .counter-section {
+  background: #2a2a2a;
+  box-shadow: 0 1px 3px #0000004d;
+}
+.counter-section h2 {
+  margin-top: 0;
+  font-size: 1.25rem;
+}

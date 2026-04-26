@@ -1,0 +1,107 @@
+:root {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  color-scheme: light dark;
+  --text-color: #1a1a1a;
+  --bg-color: #fafafa;
+  font-family:
+    -apple-system,
+    BlinkMacSystemFont,
+    Segoe UI,
+    Roboto,
+    sans-serif;
+}
+[data-theme="dark"] {
+  --text-color: #fafafa;
+  --bg-color: #1a1a1a;
+}
+body {
+  color: #1a1a1a;
+  background-color: #fafafa;
+  margin: 0;
+  padding: 0;
+  line-height: 1.6;
+}
+[data-theme="dark"] {
+  & body {
+    color: #fafafa;
+    background-color: #1a1a1a;
+  }
+}
+button {
+  cursor: pointer;
+  color: light-dark(#1a1a1a, #fafafa);
+  background: light-dark(#fff, #2a2a2a);
+  border: 1px solid light-dark(#d0d0d0, #444);
+  border-radius: 6px;
+  padding: 8px 16px;
+  font-family: inherit;
+  font-size: 1rem;
+  transition: all 0.2s;
+}
+button:hover {
+  background: light-dark(#f0f0f0, #3a3a3a);
+  border-color: light-dark(#999, #666);
+}
+button:active {
+  background: light-dark(#e0e0e0, #4a4a4a);
+  border-color: light-dark(#777, #888);
+}
+button:focus-visible {
+  outline-offset: 2px;
+  outline: 2px solid light-dark(#007bff, #4db8ff);
+}
+input {
+  color: light-dark(#1a1a1a, #fafafa);
+  background: light-dark(#fff, #2a2a2a);
+  border: 1px solid light-dark(#d0d0d0, #444);
+  border-radius: 6px;
+  padding: 8px 12px;
+  font-family: inherit;
+  font-size: 1rem;
+  transition: border-color 0.2s;
+}
+input:focus {
+  border-color: light-dark(#007bff, #4db8ff);
+  outline: none;
+  box-shadow: 0 0 0 3px light-dark(#007bff1a, #4db8ff1a);
+}
+header {
+  border-bottom: 1px solid #e0e0e0;
+  padding: 16px 0;
+}
+[data-theme="dark"] header {
+  border-bottom-color: #333;
+}
+.header-content {
+  justify-content: space-between;
+  align-items: center;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 16px;
+  display: flex;
+}
+header h1 {
+  margin: 0;
+  font-size: 1.5rem;
+}
+nav {
+  flex: 1;
+  gap: 24px;
+  margin-left: 32px;
+  display: flex;
+}
+nav a {
+  color: inherit;
+  font-weight: 500;
+  text-decoration: none;
+  transition: opacity 0.2s;
+}
+nav a:hover {
+  opacity: 0.7;
+}
+main {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 32px 16px;
+}
