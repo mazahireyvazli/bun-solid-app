@@ -1,0 +1,16 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "rules": {
+    "import/no-cycle": ["error", { "maxDepth": 2 }]
+  },
+  "settings": {
+    "jsx-a11y": {
+      "polymorphicPropName": null,
+      "components": {},
+      "attributes": {}
+    }
+  },
+  "env": {
+    "builtin": true
+  }
+}

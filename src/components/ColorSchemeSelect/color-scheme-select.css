@@ -1,0 +1,70 @@
+.cs-select {
+  position: relative;
+}
+
+.cs-select__toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  padding: 0.375rem;
+  color: var(--text-color);
+  cursor: pointer;
+  border-radius: 8px;
+}
+
+.cs-select__toggle:hover {
+  opacity: 0.7;
+}
+
+.cs-select__dropdown {
+  position: absolute;
+  inset: unset;
+  top: anchor(bottom);
+  right: anchor(right);
+  position-try-fallbacks: flip-block, flip-inline;
+
+  margin: 0;
+  margin-top: 0.25rem;
+  min-width: 8.5rem;
+  padding: 0;
+  background-color: var(--bg-color);
+  border: 1px solid light-dark(#e0e0e0, #333);
+  border-radius: 8px;
+  box-shadow: 0 4px 12px light-dark(rgba(0, 0, 0, 0.08), rgba(0, 0, 0, 0.3));
+  overflow: hidden;
+}
+
+.cs-select__dropdown::backdrop {
+  background: transparent;
+}
+
+.cs-select__option {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.8125rem;
+  font-family: inherit;
+  background: none;
+  border: none;
+  color: var(--text-color);
+  cursor: pointer;
+  text-align: left;
+}
+
+.cs-select__option:hover {
+  background-color: light-dark(#f0f0f0, #2a2a2a);
+}
+
+.cs-select__option--active {
+  font-weight: 600;
+}
+
+.cs-select__option-check {
+  width: 1rem;
+  text-align: center;
+  font-size: 0.75rem;
+}
