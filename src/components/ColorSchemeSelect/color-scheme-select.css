@@ -12,28 +12,33 @@
   color: var(--text-color);
   cursor: pointer;
   border-radius: 8px;
+  transition: background 0.2s;
 }
 
 .cs-select__toggle:hover {
-  opacity: 0.7;
+  background-color: #f0f0f0;
+}
+
+[data-theme="dark"] .cs-select__toggle:hover {
+  background-color: #2a2a2a;
 }
 
 .cs-select__dropdown {
   position: absolute;
-  inset: unset;
-  top: anchor(bottom);
-  right: anchor(right);
-  position-try-fallbacks: flip-block, flip-inline;
-
+  position-area: bottom span-left;
+  inset: auto;
   margin: 0;
-  margin-top: 0.25rem;
-  min-width: 8.5rem;
-  padding: 0;
+  padding: 0.5rem;
+
   background-color: var(--bg-color);
-  border: 1px solid light-dark(#e0e0e0, #333);
+  border: 1px solid #e0e0e0;
   border-radius: 8px;
-  box-shadow: 0 4px 12px light-dark(rgba(0, 0, 0, 0.08), rgba(0, 0, 0, 0.3));
-  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+[data-theme="dark"] .cs-select__dropdown {
+  border-color: #333;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 }
 
 .cs-select__dropdown::backdrop {
@@ -53,10 +58,24 @@
   color: var(--text-color);
   cursor: pointer;
   text-align: left;
+  transition: background-color 0.2s;
 }
 
 .cs-select__option:hover {
-  background-color: light-dark(#f0f0f0, #2a2a2a);
+  background-color: #f0f0f0;
+}
+
+[data-theme="dark"] .cs-select__option:hover {
+  background-color: #2a2a2a;
+}
+
+.cs-select__option:focus-visible {
+  outline: 2px solid #007bff;
+  outline-offset: -2px;
+}
+
+[data-theme="dark"] .cs-select__option:focus-visible {
+  outline-color: #4db8ff;
 }
 
 .cs-select__option--active {

@@ -1,13 +1,15 @@
-import { For, type VoidComponent } from "solid-js";
+import { createSignal, For, type VoidComponent } from "solid-js";
 
-import { createSignalStorage } from "@/src/libs/signal.storage";
+import { createSignalStorage } from "@/src/libs/createSignalStorage";
+import { ssrLazy } from "@/src/libs/ssr_lazy";
 
 // icons
-import darkLightModeSVG from "@/src/assets/svg/dark_light_mode.svg" with { type: "text" };
-import darkModeSVG from "@/src/assets/svg/dark_mode.svg" with { type: "text" };
-import lightModeSVG from "@/src/assets/svg/light_mode.svg" with { type: "text" };
-import { LoadCSS } from "@/src/libs/LoadCSS";
+import darkLightModeSVG from "@/src/assets/svg/dark_light_mode.svg?inline";
+import darkModeSVG from "@/src/assets/svg/dark_mode.svg?inline";
+import lightModeSVG from "@/src/assets/svg/light_mode.svg?inline";
 //end
+
+const Styles = await ssrLazy(() => import("@/src/components/ColorSchemeSelect/css.tsx"));
 
 const options: { value: ColorScheme; label: string; icon: () => ReturnType<VoidComponent> }[] = [
   {
@@ -33,47 +35,41 @@ export const ColorSchemeSelect: VoidComponent = () => {
     globalThis.colorScheme.initialValue,
   );
 
-  let dropdownRef: HTMLDivElement;
-
-  const currentIcon = () => {
+  const [currentIcon] = createSignal(() => {
     const opt = options.find((o) => o.value === colorScheme());
-    return opt?.icon ?? options[2]!.icon;
-  };
+
+    if (!opt) {
+      return options[2]!.icon();
+    }
+
+    return opt.icon();
+  });
 
   const handleSelect = (value: ColorScheme) => {
     setColorScheme(value);
-    dropdownRef?.hidePopover();
   };
 
   return (
     <div class="cs-select">
-      <LoadCSS
-        imports={import("@/src/components/ColorSchemeSelect/color-scheme-select.css?inline").then((m) => [m.default])}
-      />
+      <Styles />
 
       <button class="cs-select__toggle" popovertarget="cs-dropdown" aria-label="Change color scheme">
-        {currentIcon()()}
+        {currentIcon()}
       </button>
-      <div
-        class="cs-select__dropdown"
-        ref={(el) => (dropdownRef = el)}
-        id="cs-dropdown"
-        popover="auto"
-        role="listbox"
-        aria-label="Color scheme options"
-      >
+      <div class="cs-select__dropdown" id="cs-dropdown" popover="auto" role="listbox" aria-label="Color scheme options">
         <For each={options}>
           {(option) => (
             <button
-              class="cs-select__option"
-              classList={{ "cs-select__option--active": colorScheme() === option.value }}
+              class={{ "cs-select__option--active": colorScheme() === option().value, "cs-select__option": true }}
               role="option"
-              aria-selected={colorScheme() === option.value}
-              onClick={() => handleSelect(option.value)}
+              aria-selected={(colorScheme() === option().value).toString() as "true" | "false"}
+              onClick={() => handleSelect(option().value)}
+              popovertarget="cs-dropdown"
+              popovertargetaction="hide"
             >
-              {option.icon()}
-              <span>{option.label}</span>
-              <span class="cs-select__option-check">{colorScheme() === option.value ? "\u2713" : ""}</span>
+              {option().icon()}
+              <span>{option().label}</span>
+              <span class="cs-select__option-check">{colorScheme() === option().value ? "\u2713" : ""}</span>
             </button>
           )}
         </For>

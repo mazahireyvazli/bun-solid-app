@@ -1,7 +1,7 @@
-import { hydrate } from "solid-js/web";
+import { hydrate } from "@solidjs/web";
 
-import { AppProvider } from "@/src/root";
+import { AppProvider, RENDER_ID } from "@/src/root";
 
-hydrate(() => <AppProvider />, document.body, {
-  renderId: "main",
+hydrate(() => <AppProvider url={window.location.href} />, document.body, {
+  renderId: RENDER_ID,
 });

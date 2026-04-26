@@ -1,0 +1,94 @@
+.test-section {
+  background: #fff;
+  border-radius: 8px;
+  padding: 24px;
+  margin-bottom: 24px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+[data-theme="dark"] .test-section {
+  background: #2a2a2a;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+.test-section h2 {
+  margin-top: 0;
+  font-size: 1.25rem;
+}
+
+.input-group {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.input-group input {
+  flex: 1;
+  min-width: 200px;
+}
+
+.image-section {
+  background: #fff;
+  border-radius: 8px;
+  padding: 24px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  text-align: center;
+}
+
+[data-theme="dark"] .image-section {
+  background: #2a2a2a;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+.image-section img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 8px;
+}
+
+.users-section {
+  background: #fff;
+  border-radius: 8px;
+  padding: 24px;
+  margin-bottom: 24px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+[data-theme="dark"] .users-section {
+  background: #2a2a2a;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+.users-section h2 {
+  margin-top: 0;
+  font-size: 1.25rem;
+}
+
+.user-card {
+  display: flex;
+  align-items: center;
+  padding: 12px;
+  border-bottom: 1px solid #e0e0e0;
+  gap: 12px;
+}
+
+[data-theme="dark"] .user-card {
+  border-bottom-color: #333;
+}
+
+.user-card:last-child {
+  border-bottom: none;
+}
+
+.user-id {
+  background: #f0f0f0;
+  border-radius: 4px;
+  padding: 4px 8px;
+  min-width: 40px;
+  text-align: center;
+  font-weight: 600;
+}
+
+[data-theme="dark"] .user-id {
+  background: #333;
+}

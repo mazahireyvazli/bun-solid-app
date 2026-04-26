@@ -1,33 +1,29 @@
-import { generateHydrationScript, getAssets, renderToStream, useAssets } from "solid-js/web";
-import { provideRequestEvent } from "solid-js/web/storage";
-
-import { AppProvider } from "@/src/root";
-
 // Color scheme script
 import "@/src/assets/scripts/color_scheme";
 // end
 
-export default async function render(request: Request, response: Response) {
-  return provideRequestEvent({ request, response }, async () => {
+import { generateHydrationScript, getAssets, renderToStream } from "@solidjs/web";
+import { provideRequestEvent } from "@solidjs/web/storage";
+
+import manifest from "@/out/client/manifest.json";
+import { AppProvider, RENDER_ID } from "@/src/root";
+
+export const render = async (request: Request, response: Response) => {
+  return provideRequestEvent({ request, response, locals: {} }, async () => {
+    const { origin } = new URL(request.url);
+
     const { readable, writable } = new TransformStream();
 
-    const shellReady = Promise.withResolvers();
-
-    renderToStream(() => <AppProvider url={request.url} />, {
-      renderId: "main",
-      async onCompleteShell() {
-        useAssets(() => <></>);
-
-        shellReady.resolve();
-      },
+    void renderToStream(() => <AppProvider url={request.url} />, {
+      renderId: RENDER_ID,
+      manifest: { ...manifest, _base: `${origin}/` } as typeof manifest,
     }).pipeTo(writable);
 
     return {
       body: readable,
       head: async () => {
-        await shellReady.promise;
         return getAssets() + generateHydrationScript();
       },
     };
   });
-}
+};

@@ -1,11 +1,7 @@
 import type { RouteDefinition, RouteSectionProps } from "@solidjs/router";
 
 export namespace HomePageRoute {
-  type Props = RouteSectionProps<
-    Promise<{
-      resolvedStyles: string[];
-    }>
-  >;
+  type Props = RouteSectionProps<{}>;
 
   type Definition = RouteDefinition<"/", Props["data"]>;
 }

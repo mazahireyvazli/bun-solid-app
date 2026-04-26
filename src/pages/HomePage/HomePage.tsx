@@ -1,38 +1,16 @@
-import { createAsync, query, type RouteSectionProps } from "@solidjs/router";
-import { createSignal, Suspense } from "solid-js";
+import { createSignal, type Component } from "solid-js";
 
-import type { GetUsersResponseJSON } from "@/server/serverfn";
+import type { HomePageRoute } from "@/src/pages/HomePage/types";
 
-import { callServerFn } from "@/src/libs/call_serverfn";
-
-const getUsersQuery = query(
-  () => callServerFn("get_users").then((r) => r.json() as Promise<GetUsersResponseJSON>),
-  "getUsersQuery",
-);
-
-const getErrorQuery = query(() => callServerFn("get_error").then((r) => r.json()), "getErrorQuery");
-
-export const HomePage = (props: RouteSectionProps) => {
+export const HomePage: Component<HomePageRoute.Props> = () => {
   const [count, setCount] = createSignal(0);
 
-  const users = createAsync(() => getUsersQuery());
-
-  const error = createAsync(() => getErrorQuery());
-
   return (
-    <>
-      <div>Home Page {props.params?.id}</div>
+    <div class="counter-section">
+      <h2>Interactive Counter</h2>
+      <p>Click the button to increment the counter.</p>
       <button onClick={() => setCount(count() + 1)}>Count: {count()}</button>
-
-      <Suspense fallback={<div>Loading...</div>}>
-        <pre>{JSON.stringify(users(), null, 2)}</pre>
-      </Suspense>
-
-      <button onClick={() => getErrorQuery()}>Get Error</button>
-      <Suspense fallback={<div>Loading...</div>}>
-        <pre>{JSON.stringify(error(), null, 2)}</pre>
-      </Suspense>
-    </>
+    </div>
   );
 };
 

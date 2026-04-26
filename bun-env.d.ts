@@ -8,8 +8,9 @@ declare module "bun:bundle" {
 
 declare module "bun" {
   interface Env {
+    PORT: string;
     ASSETS_CACHE_MAX_AGE: string;
-    COMPRESSION_ENABLED: string;
+    COMPRESSION: "ENABLED" | "DISABLED";
     PUBLIC_DEFAULT_TITLE: string;
   }
 }
@@ -26,24 +27,29 @@ var colorScheme: {
   initListeners: () => void;
 };
 
-declare module "*.css?inline" {
+declare module "*?inline" {
   /**
-   * A string containing the CSS style
+   * A string containing the contents of the file
    */
-  const style: string;
-  export = style;
+  const content: string;
+  export = content;
 }
 
-declare module "*.css" {
+declare module "*?dataurl" {
   /**
-   * A path to the CSS file
+   * A string containing the contents of the file as data url
    */
-  const path: `${string}.css`;
-  export = path;
+  const dataurl: string;
+  export = dataurl;
 }
 
 declare module "*.svg" {
   const path: `${string}.svg`;
+  export = path;
+}
+
+declare module "*.avif" {
+  const path: `${string}.avif`;
   export = path;
 }
 
@@ -53,9 +59,4 @@ declare module "*.module.css" {
    */
   const classes: { readonly [key: string]: string };
   export = classes;
-}
-
-declare module "*.avif" {
-  const path: `${string}.avif`;
-  export = path;
 }

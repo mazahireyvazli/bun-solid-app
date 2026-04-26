@@ -5,58 +5,101 @@ Guidance for Claude Code when working in this repository.
 ## Commands
 
 - **Install**: `bun install`
-- **Dev** (`make dev`): dev build, then `bun --hot run server/index.ts &` alongside `bun run watch`
+- **Dev** (`make dev`): dev build, then `bun --watch run ./out/server/main.dev.js` alongside `bun run ./build/watch.ts`
 - **Build** (`make build`): minified SSR + client builds into `out/server` and `out/client`
-- **Build (dev)** (`make build-dev`): same as `build` with `--no-minify`
-- **Start** (`make start`): `make build`, then `bun run server/index.ts`
+- **Build (dev)** (`make build-dev`): same as `build` with `--no-minify` and `--features=IS_DEV`
+- **Start** (`make start`): `make build`, then `NODE_ENV=production bun ./out/server/main.js`
+- **Fix** (`make fix`): runs `oxfmt` formatter then `oxlint` with type-aware fixes
 
-No test or lint commands are wired up. Formatter/linter binaries exist (`oxfmt`, `oxlint`) but have no npm scripts.
+No test commands are wired up.
+
+## After making changes
+
+After editing source files:
+
+1. Run `make fix` — formats code and surfaces lint/type warnings.
+2. Run `make build-dev` — verifies the build compiles cleanly.
+
+Do not run any other commands (e.g. starting the server) unless the user explicitly asks.
 
 ## Architecture
 
-SolidJS SSR app served by Bun. The build is a custom `Bun.build()` pipeline (not Vite); the server is `Bun.serve()` (not Hono/Express).
+SolidJS 2.0 beta SSR app served by Bun. The build is a custom `Bun.build()` pipeline (not Vite); the server uses Bun's native `serve()` with typed route handlers (not Hono/Express).
 
-### Build (`build.ts`)
+### Build (`build/build.ts`)
 
-Single script driven by `parseArgs` flags (`--ssr`, `--target`, `--entrypoints`, `--outdir`, `--minify`). Two invocations produce the two bundles:
+Single script driven by `parseArgs` flags (`--ssr`, `--target`, `--entrypoints`, `--outdir`, `--minify`, `--features`). Two invocations per build:
 
-- **SSR bundle** → `out/server/entry.server.js` (target `bun`, Solid `generate: "ssr"`, `hydratable: true`)
-- **Client bundle** → `out/client/*` from `index.html` as the HTML entrypoint (target `browser`, Solid `generate: "dom"`)
+- **Client bundle** → `out/client/*` from `src/index.html` as the HTML entrypoint (target `browser`, Solid `generate: "dom"`)
+- **SSR bundle** → `out/server/main[.dev].js` from `server/main[.dev].ts` (target `bun`, Solid `generate: "ssr"`, `hydratable: true`)
 
-Plugins:
+Plugins in `build/`:
 
 - `solid-plugin` — Babel `babel-preset-solid` transform on `.tsx`/`.jsx`, toggles SSR vs. DOM codegen via the `--ssr` flag.
-- `transform-html-plugin` — lowercases tags and replaces the `<!-- INJECT_IMPORTMAP -->` comment in [index.html](index.html) with a `<script type="importmap">` pointing Solid + router + meta at `esm.sh` CDN URLs. The importmap is defined inline in [build.ts](build.ts); bump versions there and in [package.json](package.json) together.
+- `lazy.bun.plugin` / `lazy.babel.plugin` — supports `ssrLazy` (see below).
+- CSS loader (`build/loaders/css.loader.ts`) — bundles `.css?inline` imports via LightningCSS.
+- SVG loader (`build/loaders/svg.loader.ts`) — handles `.svg?inline` imports.
+- `transform-html-plugin` — inlines `<script inline src="...">` and `<style inline src="...">` tags directly into `index.html`, and replaces the `<script type="importmap">` placeholder with live CDN URLs from `esm.sh`. Bump versions in `build/build.ts` importmap and `package.json` together.
 
-Each build clears `outdir`, emits `meta.json` with the metafile, and copies `public/` into the client outdir.
+Each build emits `meta.json`. The client build also emits `manifest.json` (used by SSR for asset injection) and copies `public/` into the outdir.
 
-### Server (`server/index.ts`)
+### Server (`server/`)
 
-`Bun.serve()` with route handlers on port 3003:
+- `server/main.ts` — production server. Reads `out/client/index.html` once at startup, splits on `<!--app-head-->` / `<!--app-body-->`, and streams SSR HTML per request.
+- `server/main.dev.ts` — dev server. Same logic but re-reads the template per request (picks up rebuilds without restart). Uses `development: true`.
+- `server/routes.ts` — typed `Bun.serve()` route handlers:
+  - `/_serverfn/:name` — server function dispatcher (POST)
+  - `/chunks/*`, `/assets/*` — serve `out/client/` with cache headers; optional br/gzip/zstd compression via `server/compress.ts` when `COMPRESSION=ENABLED`
+  - `/favicon.ico`, `/robots.txt`, `/.well-known/*` — static file serving
+  - `fetch` fallback in `main.ts` — SSR catch-all
+- `server/serverfn.ts` — server function registry
 
-- `/chunks/*`, `/assets/*`, `/favicon.ico` — serve files out of `out/client/` (chunks run through [server/compress.ts](server/compress.ts) for br/gzip/zstd/deflate).
-- `/api/users` — sample JSON endpoint.
-- `fetch` fallback — streams SSR HTML: reads `out/client/index.html` as a template split on `<!--app-head-->` and `<!--app-body-->`, dynamically imports `../out/server/entry.server.js`, and pipes the rendered body between the template halves.
-
-Note: file paths in handlers (`./out/client/...`) are cwd-relative, so the server must be launched from the repo root (both `make dev` and `make start` do this). The dynamic SSR import uses a module-relative path (`../out/...`) and is re-evaluated per request, so rebuilt SSR is picked up without restarting.
-
-### Watcher (`watch.ts`)
-
-Watches `./src` recursively and runs `make build-dev` on change. SIGINT closes the watcher. The `--hot` server is started as a sibling process by the makefile (`bun --hot run server/index.ts & bun run watch`); Ctrl-C in the terminal signals the whole process group, stopping both.
-
-Dev-loop gotcha: Bun's `--hot` flag cannot be enabled via the `Bun.serve()` API, which is why the server and watcher run as two sibling processes instead of one.
+Port is read from `process.env.PORT`.
 
 ### Frontend (`src/`)
 
-- [entry.server.tsx](src/entry.server.tsx) — `renderToStream` wrapped in `provideRequestEvent`; returns `{ body, head }` where `head` awaits the shell and emits assets + hydration script.
-- [entry.client.tsx](src/entry.client.tsx) — `hydrate()` into `document.body` with `renderId: "main"`.
-- [root.tsx](src/root.tsx) — `@solidjs/router` routes (`/`, `/test`, `*`), `@solidjs/meta` providers, `RootLayout` with nav links.
-- `pages/` — route components (lazy-loaded).
-- `assets/` — static imports (SVG/AVIF).
+- `entry.server.tsx` — `renderToStream` wrapped in `provideRequestEvent`; returns `{ body, head }`. Head awaits then emits `getAssets() + generateHydrationScript()`.
+- `entry.client.tsx` — `hydrate()` into `document.body` with `renderId: RENDER_ID`.
+- `root.tsx` — `@solidjs/router` routes, `@solidjs/meta` providers (via custom `metahead.tsx`), `RootLayout` (Header + children + Footer).
+- `pages/` — route components (lazy-loaded via `ssrLazy`).
+- `components/` — shared UI components.
+- `assets/` — static imports (SVG/AVIF/CSS).
+- `libs/` — app utilities (see below).
+
+### Key libs
+
+- `libs/ssr_lazy.ts` — `ssrLazy(fn)`: wraps Solid's `lazy()` and pre-calls `.preload()` on the server (where `feature("SSR")` is true) so components are resolved before streaming begins. Use this instead of `lazy()` everywhere in route definitions.
+- `libs/metahead.tsx` — custom `<Title>`, `<Meta>`, `<Link>`, `<Style>` with SSR deduplication.
+- `libs/createSignalStorage.ts` — Solid signal backed by `localStorage` with cross-tab sync.
+- `libs/call_serverfn.ts` — isomorphic server-function caller (direct import on SSR, `fetch` on client).
+- `libs/lifecycle.ts` — `createIsMounted()`, `isHydrated()`.
+
+### Routing structure
+
+```
+/                          → HomePage
+*                          → 404
+```
+
+Each route's component and styles are loaded via `ssrLazy`. Styles are rendered as inline `<style>` tags co-located with their component.
+
+### CSS conventions
+
+- `src/assets/css/global.css` — global reset, design tokens as CSS custom properties, base element styles. Inlined into `<head>` via `<style inline src="...">`.
+- Per-component CSS is co-located (`style.css`) and loaded via a sibling `css.tsx` that exports `() => <style textContent={css} />`. Components import this via `ssrLazy`.
+- All colors use the native `light-dark()` CSS function. Dark mode is applied by setting `color-scheme: dark` on `[data-theme="dark"]` (set synchronously by an inline script in `<head>`).
+- No CSS-in-JS, no CSS modules, no utility frameworks.
 
 ## Key configuration
 
-- **TypeScript** ([tsconfig.json](tsconfig.json)): strict, ESNext, `moduleResolution: bundler`, `jsx: preserve` + `jsxImportSource: solid-js`, `@/*` alias maps to repo root (e.g. `@/src/root`, `@/server/compress`) — **not** to `src/`.
+- **TypeScript** (`tsconfig.json`): strict, ESNext, `moduleResolution: bundler`, `jsx: preserve` + `jsxImportSource: @solidjs/web`, `@/*` alias maps to repo root — **not** to `src/`.
 - **bunfig.toml**: `install.exact = true` — pin exact versions when adding deps.
-- **Asset imports**: `.svg`, `.module.css`, `.avif` typed in [bun-env.d.ts](bun-env.d.ts).
-- **Env vars**: only `PUBLIC_*` are inlined into bundles (see `env: "PUBLIC_*"` in [build.ts](build.ts)).
+- **Asset imports**: `.svg`, `.module.css`, `.avif` typed in `bun-env.d.ts`.
+- **Env vars**: only `PUBLIC_*` are inlined into bundles (`env: "PUBLIC_*"` in `build/build.ts`). Runtime vars: `PORT`, `COMPRESSION`, `ASSETS_CACHE_MAX_AGE`.
+
+## Skills
+
+Two Claude Code skills are available in `.claude/skills/`:
+
+- **`solidjsv2`** — authoring and migration guide for Solid 2.0 beta. Read topic files on demand (e.g. `effects.md`, `control-flow.md`). Key gotchas: `For` children receive accessors (`item()`), `createEffect` is split into compute/apply, `onMount` → `onSettled`, `Loading` replaces `Suspense`, `Errored` replaces `ErrorBoundary`.
+- **`bun`** — Bun runtime, package manager, and API patterns. Prefer `Bun.serve`, `Bun.file`, `bun:sqlite` over Node.js equivalents.

@@ -7,7 +7,7 @@
     "moduleDetection": "force",
 
     "jsx": "preserve",
-    "jsxImportSource": "solid-js",
+    "jsxImportSource": "@solidjs/web",
 
     // Bundler mode
     "moduleResolution": "bundler",

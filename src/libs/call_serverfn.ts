@@ -1,11 +1,14 @@
+import { getRequestEvent } from "@solidjs/web";
 import { feature } from "bun:bundle";
-import { getRequestEvent } from "solid-js/web";
 
 import type { serverFunctions } from "@/server/serverfn";
 
-export const callServerFn = async (name: keyof typeof serverFunctions) => {
+export const callServerFn = async (name: keyof typeof serverFunctions, requestBody?: RequestInit["body"]) => {
   if (feature("SSR")) {
-    const { request } = getRequestEvent()!;
+    const request = new Request(getRequestEvent()!.request, {
+      method: "POST",
+      body: requestBody,
+    });
 
     const { serverFunctions } = await import("@/server/serverfn");
 
@@ -17,5 +20,8 @@ export const callServerFn = async (name: keyof typeof serverFunctions) => {
     return serverFn(request, new Response());
   }
 
-  return fetch(`/_serverfn/${name}`);
+  return fetch(`/_serverfn/${name}`, {
+    method: "POST",
+    body: requestBody,
+  });
 };

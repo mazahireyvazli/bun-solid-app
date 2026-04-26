@@ -1,7 +1,7 @@
 import { serve } from "bun";
 
 import { routes, streamHTML } from "@/server/routes";
-import render from "@/src/entry.server";
+import { render } from "@/src/entry.server";
 
 const templateFile = Bun.file(`./out/client/index.html`);
 const template = await templateFile.text();
@@ -11,11 +11,11 @@ const [beforeBody, afterBody] = afterHead?.split("<!--app-body-->") || [];
 export const server = serve({
   routes,
 
-  async fetch(_req) {
+  async fetch(req) {
     const response = new Response();
     response.headers.set("Content-Type", "text/html");
 
-    const rendered = await render(_req, response);
+    const rendered = await render(req, response);
 
     const stream = streamHTML({
       beforeHead,
@@ -27,12 +27,16 @@ export const server = serve({
     return new Response(stream, response);
   },
   error(error) {
+    if (error instanceof Response) {
+      return error;
+    }
+
     return Response.json({ error: error.message }, { status: 500 });
   },
 
   development: false,
 
-  port: 3003,
+  port: process.env.PORT,
 });
 
 console.log(`Listening on ${server.url}`);

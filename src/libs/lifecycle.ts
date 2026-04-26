@@ -1,11 +1,15 @@
-import { createSignal, getListener, onMount, sharedConfig } from "solid-js";
-import { isServer } from "solid-js/web";
+import { isServer } from "@solidjs/web";
+import { createSignal, getObserver, onSettled, sharedConfig } from "solid-js";
 
 export const createIsMounted = () => {
   const [isMounted, setIsMounted] = createSignal(false);
-  onMount(() => setIsMounted(true));
+  onSettled(() => {
+    setIsMounted(true);
+  });
 
   return isMounted;
 };
 
-export const isHydrated = () => !isServer && (!sharedConfig.context || (!!getListener() && createIsMounted()()));
+export const isHydrated = () => {
+  return !isServer && (sharedConfig.registry?.size !== 0 || (!!getObserver() && createIsMounted()()));
+};

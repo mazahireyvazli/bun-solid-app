@@ -5,7 +5,7 @@ import { serverFunctions } from "@/server/serverfn";
 
 export const routes = {
   "/_serverfn/:name": {
-    GET(request) {
+    POST(request) {
       const { name } = request.params;
 
       const serverFn = serverFunctions[name as keyof typeof serverFunctions];
@@ -25,7 +25,7 @@ export const routes = {
       const filePath = new URL(req.url).pathname;
       const file = Bun.file(`./out/client/${filePath}`);
 
-      if (process.env.COMPRESSION_ENABLED) {
+      if (process.env.COMPRESSION === "ENABLED") {
         return compress(req, new Response(file, res));
       }
 
@@ -40,7 +40,7 @@ export const routes = {
       const filePath = new URL(req.url).pathname;
       const file = Bun.file(`./out/client/${filePath}`);
 
-      if (process.env.COMPRESSION_ENABLED) {
+      if (process.env.COMPRESSION === "ENABLED") {
         return compress(req, new Response(file, res));
       }
 
@@ -49,6 +49,22 @@ export const routes = {
   },
 
   "/favicon.ico": Bun.file("./out/client/favicon.ico"),
+  "/robots.txt": Bun.file("./out/client/robots.txt"),
+
+  "/.well-known/*": {
+    async GET(req) {
+      const res = new Response();
+
+      const filePath = new URL(req.url).pathname;
+      const file = Bun.file(`./out/client/${filePath}`);
+
+      if (!(await file.exists())) {
+        return Response.json({ error: "file not found" }, { status: 404 });
+      }
+
+      return new Response(file, res);
+    },
+  },
 } satisfies Serve.Options<undefined>["routes"];
 
 export const streamHTML = ({

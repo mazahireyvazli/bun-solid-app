@@ -1,15 +1,9 @@
-import { type Accessor, createSignal, onCleanup, type Setter } from "solid-js";
-import { isServer } from "solid-js/web";
-
-import { isHydrated } from "@/src/libs/lifecycle";
+import { createSignal, onSettled, type Accessor, type Setter } from "solid-js";
 
 export const createSignalStorage = <T>(key: string, initialValue: T) => {
-  const [value, mutate] = createSignal(initialValue);
-  const refetch = () => {
-    if (isServer) {
-      return initialValue;
-    }
+  const [value, mutate] = createSignal<T>(() => initialValue);
 
+  const fetchValue = () => {
     const storedValue = globalThis.localStorage.getItem(key);
     if (storedValue === null) {
       return initialValue;
@@ -17,8 +11,7 @@ export const createSignalStorage = <T>(key: string, initialValue: T) => {
 
     return JSON.parse(storedValue) as T;
   };
-
-  const setValue = (value: T) => {
+  const storeValue = (value: T) => {
     const oldValue = globalThis.localStorage.getItem(key);
     const newValue = JSON.stringify(value);
 
@@ -34,28 +27,20 @@ export const createSignalStorage = <T>(key: string, initialValue: T) => {
     );
   };
 
-  const getValue = () => {
-    if (!isHydrated()) {
-      return refetch();
+  onSettled(() => {
+    mutate(fetchValue);
+
+    function onStorageHandler(event: StorageEvent) {
+      if (event.key === key) {
+        mutate(() => JSON.parse(event.newValue!));
+      }
     }
-
-    return value();
-  };
-
-  function onStorageHandler(event: StorageEvent) {
-    if (event.key === key) {
-      mutate(() => JSON.parse(event.newValue!));
-    }
-  }
-
-  if (!isServer) {
-    mutate(() => refetch());
 
     window.addEventListener("storage", onStorageHandler);
-    onCleanup(() => {
+    return () => {
       window.removeEventListener("storage", onStorageHandler);
-    });
-  }
+    };
+  });
 
-  return [getValue, setValue] as [Accessor<T>, Setter<T>];
+  return [value, storeValue] as [Accessor<T>, Setter<T>];
 };
